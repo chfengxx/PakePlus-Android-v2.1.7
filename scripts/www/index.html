@@ -2,8 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=contain">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- 修复状态栏显示问题：移除viewport-fit=contain，调整缩放策略 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 修复状态栏样式：改为dark/light确保内容可见 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="dark">
     <meta name="theme-color" content="#f5f5f5">
     <title>优惠券管理</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,7 +24,7 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             background-color: #f5f5f5;
-            padding-top: env(safe-area-inset-top);
+            /* 修复状态栏：只保留底部安全区，顶部由内容自然填充 */
             padding-bottom: env(safe-area-inset-bottom);
             min-height: 100vh;
         }
@@ -36,18 +38,20 @@
             box-shadow: none;
             position: relative;
             background-color: #f5f5f5;
-            min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            min-height: calc(100vh - env(safe-area-inset-bottom));
             height: 100%;
         }
 
         .top-bar {
             position: absolute;
-            top: calc(5px + env(safe-area-inset-top));
+            /* 调整1：向上移动，紧贴状态栏下方 */
+            top: env(safe-area-inset-top);
             left: 0;
             width: 100%;
-            padding: 0 15px;
+            /* 调整2：左侧padding从15px改为20px，与下方内容对齐 */
+            padding: 0 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* 关键修改：改为center实现居中 */
             align-items: center;
             z-index: 10;
             background-color: #f5f5f5;
@@ -59,6 +63,12 @@
             display: grid;
             grid-template-columns: repeat(3, 70px);
             gap: 6px;
+            /* 关键修改：移除左侧margin，确保居中 */
+            margin: 0 auto;
+            /* 确保对齐基准一致 */
+            justify-content: center;
+            /* 移除额外的内边距，保证边框对齐 */
+            padding: 0;
         }
 
         .tab-item {
@@ -92,6 +102,18 @@
             outline: none;
         }
 
+        /* 按钮容器：统一管理添加和删除按钮，实现绝对定位靠右对齐 */
+        .btn-container {
+            position: absolute;
+            right: 20px; /* 与顶栏padding保持一致 */
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px; /* 按钮之间的间距 */
+            height: 100%;
+        }
+
         .add-coupon-btn {
             width: 36px;
             height: 36px;
@@ -107,6 +129,8 @@
             background: transparent;
             -webkit-appearance: none;
             appearance: none;
+            /* 确保按钮垂直居中 */
+            flex-shrink: 0;
         }
 
         .add-coupon-btn:active {
@@ -130,11 +154,11 @@
             background: transparent;
             -webkit-appearance: none;
             appearance: none;
-            /* 关键调整：移除margin，通过父容器控制位置 */
-            position: absolute;
-            right: 15px; /* 与top-bar的padding-right一致 */
-            top: 50%;
-            transform: translateY(-50%);
+            /* 关键调整：移除绝对定位，改为flex布局控制 */
+            position: static;
+            transform: none;
+            /* 确保按钮垂直居中 */
+            flex-shrink: 0;
         }
 
         .clear-all-btn.show {
@@ -143,18 +167,12 @@
 
         .clear-all-btn:active {
             color: #e55353;
-            transform: translate(-50%, -50%) scale(1.1); /* 调整缩放中心点 */
-        }
-
-        /* 调整：按钮容器样式，用于控制添加按钮的显示/隐藏 */
-        .btn-container {
-            position: relative; /* 作为clear-all-btn的定位参考 */
-            width: 36px; /* 与按钮宽度一致 */
-            height: 36px;
+            transform: scale(1.1); /* 调整缩放中心点 */
         }
 
         .coupon-app {
-            padding-top: calc(50px + env(safe-area-inset-top));
+            /* 调整5：顶部padding从50px改为40px，整体向上移动 */
+            padding-top: calc(40px + env(safe-area-inset-top));
             padding-bottom: calc(20px + env(safe-area-inset-bottom));
             background-color: #f5f5f5;
             min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
@@ -167,7 +185,8 @@
             grid-template-columns: 1fr;
             overflow: hidden;
             height: 100%;
-            padding: 0 10px;
+            /* 调整6：content-area的左侧padding与top-bar对齐 */
+            padding: 0 20px;
         }
 
         .coupon-list {
@@ -617,18 +636,18 @@
                 border:none; 
                 border-radius:0; 
                 height:100%;
-                min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+                min-height: calc(100vh - env(safe-area-inset-bottom));
             }
             .top-bar { 
-                top: calc(5px + env(safe-area-inset-top));
-                padding: 5px 15px; 
+                top: env(safe-area-inset-top);
+                padding: 5px 20px; 
             }
             .floating-tabs { grid-template-columns: repeat(3, 70px); gap: 6px; }
             .tab-item { padding: 8px 0; font-size: 13px; height: 36px; }
             .add-coupon-btn { width: 36px; height: 36px; font-size: 28px; }
             .clear-all-btn { width: 36px; height: 36px; font-size: 22px; }
             .coupon-app { 
-                padding-top: calc(50px + env(safe-area-inset-top));
+                padding-top: calc(40px + env(safe-area-inset-top));
                 padding-bottom: calc(20px + env(safe-area-inset-bottom));
                 min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             }
@@ -652,12 +671,11 @@
                 <button class="tab-item" id="used-tab">已使用</button>
                 <button class="tab-item" id="recycle-tab">回收站</button>
             </div>
-            <!-- 调整：新增btn-container容器，用于定位控制 -->
+            <!-- 调整：按钮容器使用绝对定位 -->
             <div class="btn-container">
                 <button class="add-coupon-btn" id="add-coupon-btn">+</button>
-                <!-- 调整：一键清除按钮移到btn-container外，通过绝对定位对齐 -->
+                <button class="clear-all-btn" id="clear-all-btn"><i class="fas fa-trash-alt"></i></button>
             </div>
-            <button class="clear-all-btn" id="clear-all-btn"><i class="fas fa-trash-alt"></i></button>
         </div>
 
         <div class="coupon-app">
@@ -760,6 +778,26 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // ========== 第一步：先声明所有DOM变量（核心修复点） ==========
+        const unusedList = document.getElementById('unused-list');
+        const usedList = document.getElementById('used-list');
+        const recycleList = document.getElementById('recycle-list');
+        const unusedEmpty = document.getElementById('unused-empty');
+        const usedEmpty = document.getElementById('used-empty');
+        const recycleEmpty = document.getElementById('recycle-empty');
+        const addCouponBtn = document.getElementById('add-coupon-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const addModal = document.getElementById('add-modal');
+        const editModal = document.getElementById('edit-modal');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const clearAllModal = document.getElementById('clear-all-modal');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const clearAllCancelBtn = document.getElementById('clear-all-cancel-btn');
+        const clearAllConfirmBtn = document.getElementById('clear-all-confirm-btn');
+        const toast = document.getElementById('toast');
+
+        // ========== 数据存储相关函数 ==========
         function isLocalStorageAvailable() {
             try {
                 const testKey = 'coupon_test_key';
@@ -821,6 +859,7 @@
             }
         }
 
+        // ========== 全局变量 ==========
         let couponData = {};       
         let recycleData = {};      
         let maxCouponId = 0;
@@ -829,24 +868,7 @@
         let currentDeleteId = null;
         let currentEditId = null;
 
-        const unusedList = document.getElementById('unused-list');
-        const usedList = document.getElementById('used-list');
-        const recycleList = document.getElementById('recycle-list');
-        const unusedEmpty = document.getElementById('unused-empty');
-        const usedEmpty = document.getElementById('used-empty');
-        const recycleEmpty = document.getElementById('recycle-empty');
-        const addCouponBtn = document.getElementById('add-coupon-btn');
-        const clearAllBtn = document.getElementById('clear-all-btn');
-        const addModal = document.getElementById('add-modal');
-        const editModal = document.getElementById('edit-modal');
-        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-        const clearAllModal = document.getElementById('clear-all-modal');
-        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
-        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-        const clearAllCancelBtn = document.getElementById('clear-all-cancel-btn');
-        const clearAllConfirmBtn = document.getElementById('clear-all-confirm-btn');
-        const toast = document.getElementById('toast');
-
+        // ========== 工具函数 ==========
         function getCurrentTime() {
             const now = new Date();
             const y = now.getFullYear();
@@ -890,6 +912,7 @@
             }, duration);
         }
 
+        // ========== 渲染相关函数 ==========
         function renderCoupon(id) {
             const d = couponData[id];
             const el = document.createElement('div');
@@ -1049,6 +1072,7 @@
             bindRecycleButtons();
         }
 
+        // ========== 事件绑定相关函数 ==========
         function bindRecycleButtons() {
             document.querySelectorAll('.recycle-list .restore-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1092,6 +1116,7 @@
             });
         }
 
+        // 取消删除确认
         confirmCancelBtn.addEventListener('click', function() {
             deleteConfirmModal.style.display = 'none';
             if (currentDeleteId) {
@@ -1101,6 +1126,7 @@
             currentDeleteId = null;
         });
 
+        // 确认删除
         confirmDeleteBtn.addEventListener('click', function() {
             deleteConfirmModal.style.display = 'none';
             if (!currentDeleteId || !recycleData[currentDeleteId]) {
@@ -1132,16 +1158,19 @@
             }
         });
 
+        // 删除确认弹窗点击空白处关闭
         deleteConfirmModal.addEventListener('click', function(e) {
             if (e.target === deleteConfirmModal) {
                 confirmCancelBtn.click();
             }
         });
 
+        // 清空回收站取消
         clearAllCancelBtn.addEventListener('click', function() {
             clearAllModal.style.display = 'none';
         });
 
+        // 清空回收站确认
         clearAllConfirmBtn.addEventListener('click', function() {
             clearAllModal.style.display = 'none';
             
@@ -1153,12 +1182,14 @@
             showToast('回收站已清空');
         });
 
+        // 清空回收站弹窗点击空白处关闭
         clearAllModal.addEventListener('click', function(e) {
             if (e.target === clearAllModal) {
                 clearAllCancelBtn.click();
             }
         });
 
+        // 一键清空按钮点击
         clearAllBtn.addEventListener('click', function() {
             if (Object.keys(recycleData).length === 0) {
                 showToast('回收站暂无数据');
@@ -1167,6 +1198,7 @@
             clearAllModal.style.display = 'flex';
         });
 
+        // 保存新增优惠券
         function saveAddCoupon() {
             const cat = document.getElementById('add-category').value.trim();
             const title = document.getElementById('add-title').value.trim();
@@ -1196,6 +1228,7 @@
             showToast('优惠券添加成功');
         }
 
+        // 保存编辑优惠券
         function saveEditCoupon() {
             if(!currentEditId) return;
             const cat = document.getElementById('edit-category').value.trim();
@@ -1220,6 +1253,7 @@
             showToast('优惠券编辑成功');
         }
 
+        // 全局点击事件委托
         document.addEventListener('click', function(e) {
             if (e.target.closest('.delete-btn') && !e.target.closest('.recycle-list')) {
                 const couponId = e.target.closest('.delete-btn').dataset.id;
@@ -1275,7 +1309,7 @@
             }
         });
 
-        // 调整：标签切换逻辑，控制添加按钮和一键清除按钮的显示/隐藏
+        // 标签切换逻辑
         document.querySelectorAll('.tab-item').forEach((tab, index)=>{
             tab.addEventListener('click', ()=>{
                 document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -1285,7 +1319,7 @@
                 usedList.style.display = index === 1 ? 'block' : 'none';
                 recycleList.style.display = index === 2 ? 'block' : 'none';
                 
-                // 调整：仅在未使用标签显示添加按钮
+                // 仅在未使用标签显示添加按钮
                 if (index === 0) {
                     addCouponBtn.style.display = 'flex';
                     clearAllBtn.classList.remove('show');
@@ -1299,14 +1333,18 @@
             });
         });
 
+        // 新增优惠券弹窗事件
         document.getElementById('cancel-add').addEventListener('click', ()=> addModal.style.display='none');
         document.getElementById('confirm-add').addEventListener('click', saveAddCoupon);
+        
+        // 编辑优惠券弹窗事件
         document.getElementById('cancel-edit').addEventListener('click', ()=>{ 
             editModal.style.display='none'; 
             currentEditId=null; 
         });
         document.getElementById('confirm-edit').addEventListener('click', saveEditCoupon);
 
+        // 新增优惠券按钮点击
         addCouponBtn.addEventListener('click', ()=>{
             document.getElementById('add-category').value = '';
             document.getElementById('add-title').value = '';
@@ -1315,6 +1353,7 @@
             addModal.style.display = 'flex';
         });
 
+        // 弹窗点击空白处关闭
         addModal.addEventListener('click', e => {
             if (e.target === addModal) addModal.style.display = 'none';
         });
@@ -1325,7 +1364,7 @@
             }
         });
 
-        // 添加默认示例优惠券的函数
+        // 添加默认示例优惠券
         function addDefaultCoupon() {
             // 检查是否已经存在默认优惠券，避免重复添加
             if (Object.keys(couponData).length === 0) {
@@ -1349,7 +1388,6 @@
 
         // ========== 初始化 ==========
         loadFromStorage();
-        // 添加默认优惠券
         addDefaultCoupon();
         renderAll();
     </script>
