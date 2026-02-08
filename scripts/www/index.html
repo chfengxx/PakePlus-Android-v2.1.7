@@ -1,11 +1,1094 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>优惠券管理</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 原有样式保持不变 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        .phone-container {
+            max-width: 402px;
+            margin: 20px auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 56px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.08);
+            position: relative;
+            background-color: #fff;
+            min-height: 870px;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 40px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .floating-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 8px;
+        }
+
+        .tab-item {
+            padding: 12px 0;
+            background-color: #fff;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
+            text-align: center;
+            line-height: 1;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-item.active {
+            color: #fff;
+            background-color: #2f80ed;
+            box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
+        }
+
+        .add-coupon-btn {
+            width: 40px;
+            height: 40px;
+            color: #2f80ed;
+            font-size: 32px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+
+        .add-coupon-btn:hover {
+            color: #1e6fcf;
+            transform: scale(1.1);
+        }
+
+        .coupon-app {
+            padding-top: 100px;
+            padding-bottom: 80px;
+            background-color: #f5f5f5;
+            min-height: 870px;
+        }
+
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr;
+            overflow: hidden;
+            height: 100%;
+            padding: 0 10px;
+        }
+
+        .coupon-list {
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: calc(100% - 20px);
+            scrollbar-width: none;
+        }
+        .coupon-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 标签显示控制 */
+        .unused-list { display: block; }
+        .used-list { display: none; }
+        .recycle-list { display: none; }
+
+        /* 分类容器样式 */
+        .category-group {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            padding: 12px 15px;
+            background-color: #f8fbff;
+            border-bottom: 1px solid #f0f7ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-icon {
+            color: #2f80ed;
+            font-size: 16px;
+        }
+
+        .category-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2f80ed;
+        }
+
+        .category-coupons {
+            padding: 5px;
+        }
+
+        /* 优惠券项样式 - 新增删除动画 */
+        .coupon-item {
+            padding: 10px 15px;
+            display: grid;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            /* 新增：动画过渡基础属性 */
+            transition: all 0.3s ease;
+            opacity: 1;
+            height: auto;
+            overflow: hidden;
+        }
+
+        /* 新增：删除动画类 */
+        .coupon-item.deleting {
+            opacity: 0;
+            height: 0;
+            margin-bottom: 0;
+            padding: 0 15px;
+            transition: all 0.3s ease;
+        }
+
+        .coupon-item:hover {
+            background-color: #f8f8f8;
+        }
+
+        /* 未使用优惠券布局 */
+        .unused-list .coupon-item {
+            grid-template-columns: auto 1fr auto auto;
+        }
+
+        /* 已使用/回收站布局 */
+        .used-list .coupon-item,
+        .recycle-list .coupon-item {
+            grid-template-columns: 1fr auto;
+        }
+
+        .checkbox-wrapper {
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .coupon-checkbox {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            accent-color: #2f80ed;
+        }
+
+        .coupon-content {
+            display: grid;
+            gap: 6px;
+        }
+
+        .coupon-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+        }
+
+        .coupon-expire {
+            font-size: 12px;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 已使用-使用时间 */
+        .coupon-use-time {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 回收站-删除时间 */
+        .coupon-delete-time {
+            font-size: 12px;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .coupon-note {
+            font-size: 12px;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        /* 已使用/回收站文字样式 */
+        .used-list .coupon-title,
+        .recycle-list .coupon-title {
+            color: #999;
+            text-decoration: line-through;
+        }
+
+        .used-list .coupon-expire,
+        .recycle-list .coupon-expire {
+            color: #999;
+        }
+
+        /* 操作按钮样式 - 优化点击反馈 */
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+            pointer-events: auto;
+            z-index: 999;
+            /* 新增：点击反馈 */
+            transform: scale(1);
+        }
+
+        /* 新增：按钮按压效果 */
+        .action-btn:active {
+            transform: scale(0.9);
+            opacity: 0.8;
+        }
+
+        /* 新增：禁用状态 */
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .edit-btn { background-color: #f0f7ff; color: #2f80ed; }
+        .edit-btn:hover { background-color: #e8f3ff; transform: scale(1.1); }
+        .delete-btn { background-color: #fff0f0; color: #ff6b6b; }
+        .delete-btn:hover { background-color: #ffe8e8; transform: scale(1.1); }
+        .restore-btn { background-color: #f0fff4; color: #4caf50; }
+        .restore-btn:hover { background-color: #e8f5e9; transform: scale(1.1); }
+        .remove-btn { background-color: #ffebee; color: #f44336; }
+        .remove-btn:hover { background-color: #ffcdd2; transform: scale(1.1); }
+
+        /* 空状态提示 */
+        .empty-tip {
+            text-align: center;
+            padding: 40px 0;
+            color: #ccc;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .empty-tip i {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+            color: #ddd;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            width: 90%;
+            max-width: 360px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        .form-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-input:focus { border-color: #2f80ed; }
+
+        .modal-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 10px 0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cancel-btn { background-color: #f5f5f5; color: #666; }
+        .confirm-btn { background-color: #2f80ed; color: #fff; }
+
+        /* ========== 新增：自定义确认弹窗样式 ========== */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-content {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .confirm-icon {
+            font-size: 32px;
+            color: #ff6b6b;
+            margin-bottom: 16px;
+        }
+
+        .confirm-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .confirm-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .confirm-cancel {
+            padding: 10px 0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid #e0e0e0;
+            background-color: #fff;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .confirm-delete {
+            padding: 10px 0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            background-color: #ff6b6b;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* ========== 新增：Toast 提示样式 ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .phone-container { 
+                margin:0; 
+                border:none; 
+                border-radius:0; 
+                height:100vh; 
+                min-height: auto;
+            }
+            .top-bar { top: 15px; padding: 0 15px; }
+            .floating-tabs { grid-template-columns: repeat(3, 70px); gap: 6px; }
+            .tab-item { padding: 8px 0; font-size: 13px; height: 36px; }
+            .add-coupon-btn { width: 36px; height: 36px; font-size: 28px; }
+            .coupon-app { padding-top: 80px; padding-bottom: 70px; height: 100vh; }
+            .coupon-list { height: calc(100% - 10px); }
+            .action-btn { width: 32px; height: 32px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="top-bar">
+            <div class="floating-tabs">
+                <button class="tab-item active" id="unused-tab">未使用</button>
+                <button class="tab-item" id="used-tab">已使用</button>
+                <button class="tab-item" id="recycle-tab">回收站</button>
+            </div>
+            <button class="add-coupon-btn" id="add-coupon-btn">+</button>
+        </div>
+
+        <div class="coupon-app">
+            <div class="content-area">
+                <!-- 未使用列表 -->
+                <div class="coupon-list unused-list" id="unused-list">
+                    <div class="empty-tip" id="unused-empty">
+                        <i class="fas fa-ticket-alt"></i><p>暂无优惠券</p>
+                    </div>
+                </div>
+
+                <!-- 已使用列表 -->
+                <div class="coupon-list used-list" id="used-list">
+                    <div class="empty-tip" id="used-empty">
+                        <i class="fas fa-check-circle"></i><p>暂无已使用的优惠券</p>
+                    </div>
+                </div>
+
+                <!-- 回收站列表 -->
+                <div class="coupon-list recycle-list" id="recycle-list">
+                    <div class="empty-tip" id="recycle-empty">
+                        <i class="fas fa-trash-alt"></i><p>暂无已删除的优惠券</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增弹窗 -->
+    <div class="modal" id="add-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">新增优惠券</h3>
+            <div class="form-group">
+                <label class="form-label">分类</label>
+                <input type="text" class="form-input" id="add-category" placeholder="例如：电商、餐饮">
+            </div>
+            <div class="form-group">
+                <label class="form-label">标题</label>
+                <input type="text" class="form-input" id="add-title" placeholder="例如：京东满200减50优惠券">
+            </div>
+            <div class="form-group">
+                <label class="form-label">到期时间</label>
+                <input type="text" class="form-input" id="add-expire" placeholder="例如：2026-05-30">
+            </div>
+            <div class="form-group">
+                <label class="form-label">备注</label>
+                <input type="text" class="form-input" id="add-note" placeholder="例如：限家电品类使用">
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel-btn" id="cancel-add">取消</button>
+                <button class="modal-btn confirm-btn" id="confirm-add">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑弹窗 -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">编辑优惠券</h3>
+            <div class="form-group">
+                <label class="form-label">分类</label>
+                <input type="text" class="form-input" id="edit-category">
+            </div>
+            <div class="form-group">
+                <label class="form-label">标题</label>
+                <input type="text" class="form-input" id="edit-title">
+            </div>
+            <div class="form-group">
+                <label class="form-label">到期时间</label>
+                <input type="text" class="form-input" id="edit-expire">
+            </div>
+            <div class="form-group">
+                <label class="form-label">备注</label>
+                <input type="text" class="form-input" id="edit-note">
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel-btn" id="cancel-edit">取消</button>
+                <button class="modal-btn confirm-btn" id="confirm-edit">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 新增：自定义确认弹窗 ========== -->
+    <div class="confirm-modal" id="delete-confirm-modal">
+        <div class="confirm-content">
+            <i class="fas fa-exclamation-circle confirm-icon"></i>
+            <p class="confirm-text">确定彻底删除该优惠券？<br>此操作不可恢复！</p>
+            <div class="confirm-btns">
+                <button class="confirm-cancel" id="confirm-cancel-btn">取消</button>
+                <button class="confirm-delete" id="confirm-delete-btn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 新增：Toast 提示 ========== -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 数据存储（统一使用字符串ID）
+        let couponData = {};       // 未使用/已使用优惠券
+        let recycleData = {};      // 回收站优惠券
+        let maxCouponId = 0;
+        let couponOrder = [];      // 优惠券创建顺序
+        let recycleOrder = [];     // 回收站优惠券顺序
+        // 新增：存储当前要删除的优惠券ID
+        let currentDeleteId = null;
+
+        // DOM元素获取
+        const unusedList = document.getElementById('unused-list');
+        const usedList = document.getElementById('used-list');
+        const recycleList = document.getElementById('recycle-list');
+        const unusedEmpty = document.getElementById('unused-empty');
+        const usedEmpty = document.getElementById('used-empty');
+        const recycleEmpty = document.getElementById('recycle-empty');
+        const addCouponBtn = document.getElementById('add-coupon-btn');
+        const addModal = document.getElementById('add-modal');
+        const editModal = document.getElementById('edit-modal');
+        // 新增：自定义确认弹窗和Toast元素
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const toast = document.getElementById('toast');
+        let currentEditId = null;
+
+        // 工具函数：获取当前时间（精确到分钟）
+        function getCurrentTime() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth()+1).padStart(2,'0');
+            const d = String(now.getDate()).padStart(2,'0');
+            const hh = String(now.getHours()).padStart(2,'0');
+            const mm = String(now.getMinutes()).padStart(2,'0');
+            return `${y}-${m}-${d} ${hh}:${mm}`;
+        }
+
+        // 工具函数：获取分类图标
+        function getCategoryIcon(cat) {
+            const map = {
+                '电商':'fa-shopping-cart','餐饮':'fa-coffee','出行':'fa-gas-pump','酒店':'fa-hotel'
+            };
+            return map[cat] || 'fa-tag';
+        }
+
+        // 空状态检查
+        function checkEmptyState() {
+            const unusedCount = Object.keys(couponData).filter(id => !couponData[id].isUsed).length;
+            const usedCount = Object.keys(couponData).filter(id => couponData[id].isUsed).length;
+            const recycleCount = Object.keys(recycleData).length;
+            
+            unusedEmpty.style.display = unusedCount > 0 ? 'none' : 'block';
+            usedEmpty.style.display = usedCount > 0 ? 'none' : 'block';
+            recycleEmpty.style.display = recycleCount > 0 ? 'none' : 'block';
+        }
+
+        // ========== 新增：Toast提示工具函数 ==========
+        function showToast(message, duration = 2000) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // 渲染单个优惠券（未使用/已使用）
+        function renderCoupon(id) {
+            const d = couponData[id];
+            const el = document.createElement('div');
+            el.className = 'coupon-item';
+            el.dataset.id = id;
+
+            if (!d.isUsed) {
+                el.innerHTML = `
+                    <div class="checkbox-wrapper"><input type="checkbox" class="coupon-checkbox"></div>
+                    <div class="coupon-content">
+                        <div class="coupon-title">${d.title}</div>
+                        <div class="coupon-expire"><i class="fas fa-clock"></i> 到期时间：${d.expire}</div>
+                        <div class="coupon-note">${d.note || '无备注'}</div>
+                    </div>
+                    <button class="action-btn edit-btn" data-id="${id}"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn delete-btn" data-id="${id}"><i class="fas fa-trash"></i></button>
+                `;
+            } else {
+                el.innerHTML = `
+                    <div class="coupon-content">
+                        <div class="coupon-title">${d.title}</div>
+                        <div class="coupon-expire"><i class="fas fa-clock"></i> 到期时间：${d.expire}</div>
+                        <div class="coupon-use-time"><i class="fas fa-calendar-check"></i> 使用时间：${d.useTime}</div>
+                        <div class="coupon-note">${d.note || '无备注'}</div>
+                    </div>
+                    <button class="action-btn restore-btn" data-id="${id}"><i class="fas fa-undo"></i></button>
+                `;
+            }
+            return el;
+        }
+
+        // 渲染回收站单个优惠券
+        function renderRecycleCoupon(id) {
+            const d = recycleData[id];
+            const el = document.createElement('div');
+            el.className = 'coupon-item';
+            el.dataset.id = id;
+
+            el.innerHTML = `
+                <div class="coupon-content">
+                    <div class="coupon-title">${d.title}</div>
+                    <div class="coupon-expire"><i class="fas fa-clock"></i> 到期时间：${d.expire}</div>
+                    <div class="coupon-delete-time"><i class="fas fa-trash-alt"></i> 删除时间：${d.deleteTime}</div>
+                    <div class="coupon-note">${d.note || '无备注'}</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn restore-btn" data-id="${id}"><i class="fas fa-undo"></i></button>
+                    <button class="action-btn remove-btn" data-id="${id}"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+            return el;
+        }
+
+        // 渲染分类容器（未使用/已使用）
+        function renderCategoryGroup(category, ids, isUsed = false) {
+            const group = document.createElement('div');
+            group.className = 'category-group';
+            group.dataset.category = category;
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <i class="fas ${getCategoryIcon(category)} category-icon"></i>
+                <span class="category-name">${category}</span>
+            `;
+            group.appendChild(header);
+
+            const couponsContainer = document.createElement('div');
+            couponsContainer.className = 'category-coupons';
+            
+            const sortedIds = couponOrder.filter(id => ids.includes(id));
+            sortedIds.forEach(id => {
+                couponsContainer.appendChild(renderCoupon(id));
+            });
+            
+            group.appendChild(couponsContainer);
+            return group;
+        }
+
+        // 渲染回收站分类容器
+        function renderRecycleCategoryGroup(category, ids) {
+            const group = document.createElement('div');
+            group.className = 'category-group';
+            group.dataset.category = category;
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <i class="fas ${getCategoryIcon(category)} category-icon"></i>
+                <span class="category-name">${category}</span>
+            `;
+            group.appendChild(header);
+
+            const couponsContainer = document.createElement('div');
+            couponsContainer.className = 'category-coupons';
+            
+            const sortedIds = recycleOrder.filter(id => ids.includes(id));
+            sortedIds.forEach(id => {
+                couponsContainer.appendChild(renderRecycleCoupon(id));
+            });
+            
+            group.appendChild(couponsContainer);
+            return group;
+        }
+
+        // 全量渲染
+        function renderAll() {
+            // 清空所有列表（保留空状态提示）
+            unusedList.innerHTML = '';
+            usedList.innerHTML = '';
+            recycleList.innerHTML = '';
+            unusedList.appendChild(unusedEmpty);
+            usedList.appendChild(usedEmpty);
+            recycleList.appendChild(recycleEmpty);
+
+            // 渲染未使用列表
+            const unusedIds = Object.keys(couponData).filter(id => !couponData[id].isUsed);
+            const unusedCategories = {};
+            unusedIds.forEach(id => {
+                const category = couponData[id].category;
+                if (!unusedCategories[category]) {
+                    unusedCategories[category] = [];
+                }
+                unusedCategories[category].push(id);
+            });
+            Object.keys(unusedCategories).forEach(category => {
+                const ids = unusedCategories[category];
+                const categoryGroup = renderCategoryGroup(category, ids);
+                unusedList.insertBefore(categoryGroup, unusedEmpty);
+            });
+
+            // 渲染已使用列表
+            const usedIds = Object.keys(couponData).filter(id => couponData[id].isUsed);
+            const usedCategories = {};
+            usedIds.forEach(id => {
+                const category = couponData[id].category;
+                if (!usedCategories[category]) {
+                    usedCategories[category] = [];
+                }
+                usedCategories[category].push(id);
+            });
+            Object.keys(usedCategories).forEach(category => {
+                const ids = usedCategories[category];
+                const categoryGroup = renderCategoryGroup(category, ids, true);
+                usedList.insertBefore(categoryGroup, usedEmpty);
+            });
+
+            // 渲染回收站列表
+            const recycleIds = Object.keys(recycleData);
+            const recycleCategories = {};
+            recycleIds.forEach(id => {
+                const category = recycleData[id].category;
+                if (!recycleCategories[category]) {
+                    recycleCategories[category] = [];
+                }
+                recycleCategories[category].push(id);
+            });
+            Object.keys(recycleCategories).forEach(category => {
+                const ids = recycleCategories[category];
+                const categoryGroup = renderRecycleCategoryGroup(category, ids);
+                recycleList.insertBefore(categoryGroup, recycleEmpty);
+            });
+
+            // 检查空状态
+            checkEmptyState();
+            
+            // 重新绑定回收站按钮事件
+            bindRecycleButtons();
+        }
+
+        // 绑定回收站按钮事件（优化交互）
+        function bindRecycleButtons() {
+            // 回收站恢复按钮
+            document.querySelectorAll('.recycle-list .restore-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const couponId = this.dataset.id;
+                    if (!couponId || !recycleData[couponId]) return;
+                    
+                    // 恢复到未使用列表
+                    const recoveredCoupon = recycleData[couponId];
+                    couponData[couponId] = {
+                        category: recoveredCoupon.category,
+                        title: recoveredCoupon.title,
+                        expire: recoveredCoupon.expire,
+                        note: recoveredCoupon.note,
+                        isUsed: false,
+                        useTime: ''
+                    };
+                    
+                    // 更新顺序数组
+                    if (!couponOrder.includes(couponId)) {
+                        couponOrder.push(couponId);
+                    }
+                    delete recycleData[couponId];
+                    recycleOrder = recycleOrder.filter(item => item !== couponId);
+                    
+                    renderAll();
+                    // 替换alert为toast
+                    showToast('优惠券已恢复到未使用列表');
+                });
+            });
+
+            // 回收站彻底删除按钮（优化交互核心）
+            document.querySelectorAll('.recycle-list .remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const couponId = this.dataset.id;
+                    // 校验ID有效性
+                    if (!couponId || !recycleData[couponId]) {
+                        showToast('无效的优惠券ID');
+                        return;
+                    }
+                    
+                    // 存储当前要删除的ID
+                    currentDeleteId = couponId;
+                    // 禁用按钮防止重复点击
+                    this.disabled = true;
+                    // 显示自定义确认弹窗
+                    deleteConfirmModal.style.display = 'flex';
+                });
+            });
+        }
+
+        // ========== 新增：自定义确认弹窗事件 ==========
+        // 取消删除
+        confirmCancelBtn.addEventListener('click', function() {
+            deleteConfirmModal.style.display = 'none';
+            // 恢复按钮可用状态
+            if (currentDeleteId) {
+                const btn = document.querySelector(`.recycle-list .remove-btn[data-id="${currentDeleteId}"]`);
+                if (btn) btn.disabled = false;
+            }
+            currentDeleteId = null;
+        });
+
+        // 确认删除（核心优化）
+        confirmDeleteBtn.addEventListener('click', function() {
+            deleteConfirmModal.style.display = 'none';
+            if (!currentDeleteId || !recycleData[currentDeleteId]) {
+                showToast('删除失败：无效的优惠券ID');
+                return;
+            }
+
+            // 找到对应的优惠券元素，添加删除动画
+            const couponItem = document.querySelector(`.recycle-list .coupon-item[data-id="${currentDeleteId}"]`);
+            if (couponItem) {
+                couponItem.classList.add('deleting');
+                
+                // 动画结束后再删除数据和渲染
+                setTimeout(() => {
+                    // 从回收站数据中移除
+                    delete recycleData[currentDeleteId];
+                    recycleOrder = recycleOrder.filter(item => item !== currentDeleteId);
+                    
+                    // 重新渲染列表
+                    renderAll();
+                    // 显示toast提示
+                    showToast('优惠券已被彻底删除');
+                    
+                    currentDeleteId = null;
+                }, 300); // 与CSS动画时长一致
+            } else {
+                // 兜底处理
+                delete recycleData[currentDeleteId];
+                recycleOrder = recycleOrder.filter(item => item !== currentDeleteId);
+                renderAll();
+                showToast('优惠券已被彻底删除');
+                currentDeleteId = null;
+            }
+        });
+
+        // 点击弹窗外部关闭
+        deleteConfirmModal.addEventListener('click', function(e) {
+            if (e.target === deleteConfirmModal) {
+                confirmCancelBtn.click();
+            }
+        });
+
+        // 新增优惠券
+        function saveAddCoupon() {
+            const cat = document.getElementById('add-category').value.trim();
+            const title = document.getElementById('add-title').value.trim();
+            const expire = document.getElementById('add-expire').value.trim();
+            const note = document.getElementById('add-note').value.trim();
+
+            if(!cat || !title || !expire) { 
+                showToast('分类、标题、到期时间不能为空'); 
+                return; 
+            }
+
+            maxCouponId++;
+            const couponId = maxCouponId.toString();
+            couponData[couponId] = {
+                category: cat, 
+                title: title, 
+                expire: expire, 
+                note: note, 
+                isUsed: false, 
+                useTime: ''
+            };
+            couponOrder.push(couponId);
+
+            renderAll();
+            addModal.style.display = 'none';
+            showToast('优惠券添加成功');
+        }
+
+        // 编辑保存
+        function saveEditCoupon() {
+            if(!currentEditId) return;
+            const cat = document.getElementById('edit-category').value.trim();
+            const title = document.getElementById('edit-title').value.trim();
+            const expire = document.getElementById('edit-expire').value.trim();
+            const note = document.getElementById('edit-note').value.trim();
+            
+            if(!cat || !title || !expire) { 
+                showToast('分类、标题、到期时间不能为空'); 
+                return; 
+            }
+
+            couponData[currentEditId].category = cat;
+            couponData[currentEditId].title = title;
+            couponData[currentEditId].expire = expire;
+            couponData[currentEditId].note = note;
+
+            renderAll();
+            editModal.style.display = 'none';
+            currentEditId = null;
+            showToast('优惠券编辑成功');
+        }
+
+        // 通用事件处理
+        document.addEventListener('click', function(e) {
+            // 未使用列表-删除按钮（移到回收站）
+            if (e.target.closest('.delete-btn') && !e.target.closest('.recycle-list')) {
+                const couponId = e.target.closest('.delete-btn').dataset.id;
+                const targetCoupon = { ...couponData[couponId] };
+                targetCoupon.deleteTime = getCurrentTime();
+                recycleData[couponId] = targetCoupon;
+                
+                if (!recycleOrder.includes(couponId)) {
+                    recycleOrder.push(couponId);
+                }
+                
+                delete couponData[couponId];
+                couponOrder = couponOrder.filter(id => id !== couponId);
+                
+                renderAll();
+                showToast('优惠券已移至回收站');
+                return;
+            }
+
+            // 未使用列表-编辑按钮
+            if (e.target.closest('.edit-btn')) {
+                const couponId = e.target.closest('.edit-btn').dataset.id;
+                currentEditId = couponId;
+                const d = couponData[couponId];
+                document.getElementById('edit-category').value = d.category;
+                document.getElementById('edit-title').value = d.title;
+                document.getElementById('edit-expire').value = d.expire;
+                document.getElementById('edit-note').value = d.note;
+                editModal.style.display = 'flex';
+                return;
+            }
+
+            // 未使用列表-复选框标记已使用
+            if (e.target.closest('.coupon-checkbox')) {
+                const couponId = e.target.closest('.coupon-item').dataset.id;
+                couponData[couponId].isUsed = true;
+                couponData[couponId].useTime = getCurrentTime();
+                renderAll();
+                showToast('优惠券已标记为已使用');
+                return;
+            }
+
+            // 已使用列表-恢复按钮
+            if (e.target.closest('.used-list .restore-btn')) {
+                const couponId = e.target.closest('.restore-btn').dataset.id;
+                couponData[couponId].isUsed = false;
+                couponData[couponId].useTime = '';
+                renderAll();
+                showToast('优惠券已恢复为未使用');
+                return;
+            }
+        });
+
+        // 标签切换
+        document.querySelectorAll('.tab-item').forEach((tab, index)=>{
+            tab.addEventListener('click', ()=>{
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                unusedList.style.display = index === 0 ? 'block' : 'none';
+                usedList.style.display = index === 1 ? 'block' : 'none';
+                recycleList.style.display = index === 2 ? 'block' : 'none';
+            });
+        });
+
+        // 弹窗事件
+        document.getElementById('cancel-add').addEventListener('click', ()=> addModal.style.display='none');
+        document.getElementById('confirm-add').addEventListener('click', saveAddCoupon);
+        document.getElementById('cancel-edit').addEventListener('click', ()=>{ 
+            editModal.style.display='none'; 
+            currentEditId=null; 
+        });
+        document.getElementById('confirm-edit').addEventListener('click', saveEditCoupon);
+
+        // 新增按钮点击
+        addCouponBtn.addEventListener('click', ()=>{
+            document.getElementById('add-category').value = '';
+            document.getElementById('add-title').value = '';
+            document.getElementById('add-expire').value = '';
+            document.getElementById('add-note').value = '';
+            addModal.style.display = 'flex';
+        });
+
+        // 点击外部关闭弹窗
+        addModal.addEventListener('click', e => {
+            if (e.target === addModal) addModal.style.display = 'none';
+        });
+        editModal.addEventListener('click', e => {
+            if (e.target === editModal) {
+                editModal.style.display = 'none';
+                currentEditId = null;
+            }
+        });
+
+        // 初始化
+        renderAll();
+    </script>
+</body>
 </html>
